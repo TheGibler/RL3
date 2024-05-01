@@ -1,0 +1,11 @@
+torch==2.3.0
+numpy==1.26.4
+pygame
+gym[classic_control]
+gym[box2d]
+#pygame==2.1.0
+
+#below are required only when plot.py is called
+# pandas==2.0.3
+matplotlib==3.7.5
+# scipy
