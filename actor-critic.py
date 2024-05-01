@@ -14,7 +14,7 @@ import time
 
 env_name = "LunarLander-v2"
 
-env = gym.make(env_name)
+env = gym.make(env_name, render_mode="human")
 eval_env = gym.make(env_name)
 
 state_size = env.observation_space.shape[0]
@@ -48,41 +48,49 @@ class PolicyNetwork(nn.Module):
 		return action.item(), model.log_prob(action), model.entropy()
 	
 class Critic(nn.Module):
-    def __init__(self, input_dim, learning_rate):
-        super(Critic, self).__init__()
+	def __init__(self, input_dim, learning_rate):
+		super(Critic, self).__init__()
 
-        self.critic = nn.Sequential(
-            nn.Linear(input_dim, 64),
-            nn.ReLU(),
-            nn.Linear(64, 1)
-        )
+		self.critic = nn.Sequential(
+			nn.Linear(input_dim, 64),
+			nn.ReLU(),
+			nn.Linear(64, 1)
+		)
 
-        # self.optimizer = optim.Adam(self.parameters(), lr=learning_rate)
-        # self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-        # self.to(self.device)
+		# self.optimizer = optim.Adam(self.parameters(), lr=learning_rate)
+		# self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+		# self.to(self.device)
 
-    def forward(self, state):
-        value = self.critic(state)
+	def forward(self, state):
+		value = self.critic(state)
 
-        return value
+		return value
 
-    def squared_loss(self, states, Q_sa):
-        V = self.forward(states)
+	def squared_loss(self, states, Q_sa):
+		V = self.forward(torch.tensor(states))
 
-        # state = trace[t][0]
-        # reward = trace[t][2]
-        # next_state = trace[t+1][0]
+		# state = trace[t][0]
+		# reward = trace[t][2]
+		# next_state = trace[t+1][0]
 
-        # value = agent.critic(torch.tensor(state))
-        # next_value = agent.critic(torch.tensor(next_state))
+		# value = agent.critic(torch.tensor(state))
+		# next_value = agent.critic(torch.tensor(next_state))
 
-        # td_target = reward + gamma * next_value
+		# td_target = reward + gamma * next_value
 
-        # td_error = td_target - value
+		# td_error = td_target - value
 
-        critic_loss = torch.nn.functional.mse_loss(V, Q_sa)
+		critic_loss = torch.nn.functional.mse_loss(V, Q_sa)
 
-        return critic_loss
+		loss = pow(V - Q_sa, 2)
+
+		# loss = torch.stack(loss)
+		loss = torch.sum(loss, dim=0)
+
+		# critic_loss = torch.stack(critic_loss)
+
+		return loss
+	
 def evaluate(policy, n_eval_episodes=10, verbose=False):
 	episode_rewards = []
 	for _ in range(n_eval_episodes):
@@ -135,18 +143,26 @@ def actor_critic(policy, val_func, optimizer, n_training_episodes, gamma, eval_s
 		returns = deque(maxlen=max_timesteps) 
 		T = len(rewards) 
 
-		Q_sa = np.array(len(rewards))
+		Q_sa = np.zeros(len(rewards))
 
-		for t in range(T):
+		for t in range(T-1):
 			# calculate the returns from T-1 to 0
 			# R_t = (returns[0] if len(returns)>0 else 0)
-			# returns.appendleft(gamma * R_t + rewards[t])    
-			
-			Q_sa[t] = sum(rewards[t:t+n]) + val_func.critic(torch.tensor(states[t+n]), dtype=torch.float32)
+			# returns.appendleft(gamma * R_t + rewards[t]) 
+			# print(Q_sa[t])
+			# print(rewards[t:t+n])
+			# print(states[t+n])
+			if t + n >= T:
+				n2 = T - t
+				Q_sa[t] = sum(rewards[t:t+n2])
+			else:
+				Q_sa[t] = sum(rewards[t:t+n]) + val_func.critic(torch.tensor(states[t+n]))
 			
 		Q_sa = torch.tensor(Q_sa)
 		
-		critic_loss = val_func.squared_loss(states, Q_sa)
+		critic_loss = torch.tensor(val_func.squared_loss(states, Q_sa))
+		print(critic_loss)
+		print(type(critic_loss))
 
 		# apply gradients
 		optimizer.zero_grad()
