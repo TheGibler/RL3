@@ -37,7 +37,7 @@ class PolicyNetwork(nn.Module):
 def evaluate(policy, n_eval_episodes=10, verbose=False):
 	episode_rewards = []
 	for _ in range(n_eval_episodes):
-		state, _ = eval_env.reset()
+		state, _ = env.reset()
 		done = False
 		total_rewards_ep = 0
 		
@@ -46,7 +46,7 @@ def evaluate(policy, n_eval_episodes=10, verbose=False):
 
 			if verbose: print(action)
 
-			next_state, reward, done, truncated, _ = eval_env.step(action)
+			next_state, reward, done, truncated, _ = env.step(action)
 			total_rewards_ep += reward
 			
 			if done or truncated:
@@ -127,7 +127,6 @@ if __name__ == "__main__":
 	# Create the environment
     env_name = "LunarLander-v2"
     env = gym.make(env_name)
-    eval_env = gym.make(env_name)
 
     state_size = env.observation_space.shape[0]
     action_size = env.action_space.n
@@ -140,9 +139,11 @@ if __name__ == "__main__":
     learning_rate = 0.001
     entropy = 0.001
 
+    # Policy network
     policy = PolicyNetwork(state_size, action_size, hidden_nodes)
     optimizer = optim.Adam(policy.parameters(), lr=learning_rate)	
 
+    # Run the reinforce algorithm
     scores, eval_episodes = reinforce(policy,
                     optimizer,
                     n_training_episodes, 
@@ -152,4 +153,6 @@ if __name__ == "__main__":
                     entropy,
                     verbose=True)
 	
-    print(scores, eval_episodes)
+    # print(scores, eval_episodes)
+	
+    env.close()
