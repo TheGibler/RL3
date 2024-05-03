@@ -34,7 +34,7 @@ class PolicyNetwork(nn.Module):
 		return action.item(), model.log_prob(action), model.entropy()
 	
 
-def evaluate(policy, n_eval_episodes=10, verbose=False):
+def evaluate(env, policy, n_eval_episodes=10, verbose=False):
 	episode_rewards = []
 	for _ in range(n_eval_episodes):
 		state, _ = env.reset()
@@ -59,7 +59,7 @@ def evaluate(policy, n_eval_episodes=10, verbose=False):
 	return mean_reward, std_reward
 
 
-def reinforce(policy, optimizer, n_training_episodes, gamma, eval_steps, max_timesteps=10_000, eta_entropy=0.01, verbose=False):
+def reinforce(env, policy, optimizer, n_training_episodes, gamma, eval_steps, max_timesteps=10_000, eta_entropy=0.01, verbose=False):
 	eval_rewards = []
 	eval_episodes = []
 	
@@ -113,7 +113,7 @@ def reinforce(policy, optimizer, n_training_episodes, gamma, eval_steps, max_tim
 		optimizer.step()
 		
 		if i_episode % eval_steps == 0:
-			mean_reward, std_reward = evaluate(policy)
+			mean_reward, _ = evaluate(env, policy)
 			eval_rewards.append(mean_reward)
 			eval_episodes.append(i_episode)
 
@@ -144,7 +144,8 @@ if __name__ == "__main__":
     optimizer = optim.Adam(policy.parameters(), lr=learning_rate)	
 
     # Run the reinforce algorithm
-    scores, eval_episodes = reinforce(policy,
+    scores, eval_episodes = reinforce(env,
+					policy,
                     optimizer,
                     n_training_episodes, 
                     gamma, 
