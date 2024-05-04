@@ -11,7 +11,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-b", "--baseline_subtraction", help="Runs actor-critic with baseline subtraction (running without baseline subtraction and bootstrap runs REINFORCE)", action="store_true")
 parser.add_argument("-t", "--bootstrap", help="Runs actor-critic with bootstrap (running without baseline subtraction and bootstrap runs REINFORCE)", action="store_true")
 parser.add_argument("-l", "--learning_rate", type=float, default=0.001, help="Sets the policy learning rate for the training. Default: 0.001")
-parser.add_argument("-k", "--critic_learning_rate", type=float, default=0.01, help="Sets critic the learning rate for the critic for the training. Default: 0.01")
+parser.add_argument("-k", "--critic_learning_rate", type=float, default=0.05, help="Sets critic the learning rate for the critic for the training. Default: 0.01")
 parser.add_argument("-m", "--max_episodes", type=int, default=10000, help="Sets the episode length for training. Default: 10000")
 parser.add_argument("-n", "--set_n", type=int, default=1, help="Sets n used for n-step target for actor-critic. Default: 1")
 parser.add_argument("-o", "--n_nodes", type=int, default=64, help="Sets the number of nodes in the hidden layer of the policy model. Default: 64")
@@ -25,11 +25,6 @@ policy_hidden_nodes = args.n_nodes
 critic_learning_rate = args.critic_learning_rate
 n = args.set_n
 critic_hidden_nodes = args.critic_n_nodes
-print("Training with:")
-print("policy = ", args.policy)
-print("learning rate = ", learning_rate)
-print("number of episodes = ", max_episodes)
-print("num of nodes first layer = ", policy_hidden_nodes)
 
 def call_train_actor_critic(n_repetitions, n_training_episodes, policy_learning_rate, policy_hidden_nodes,
                             eta_entropy=0.01, baseline_subtraction=False, bootstrap=False,
@@ -67,7 +62,7 @@ def call_train_actor_critic(n_repetitions, n_training_episodes, policy_learning_
                                                   bootstrap=bootstrap,
                                                   baseline_subtraction=baseline_subtraction,
                                                   n=n,
-                                                  eta_entropy=eta_entropy
+                                                  eta_entropy=eta_entropy,
                                                   verbose=True)
         returns_over_repetitions.append(eval_rewards)
 
@@ -87,9 +82,9 @@ entropies = [0.01, 0.001]
 learning_rates = [0.01, 0.001]  # TODO:
 for entropy in entropies:
     learning_curve, learning_curve_smooth, eval_episodes = call_train_actor_critic(
-        1, 10_000, 0.01, 64, eta_entropy=0.01, baseline_subtraction=False, bootstrap=False,
-        critic_learning_rate=0.05, critic_hidden_nodes=64,
-        smoothing_window=None, eval_interval=400, env_name="LunarLander-v2")
+        1, max_episodes, learning_rate, policy_hidden_nodes, eta_entropy=0.01, baseline_subtraction=args.baseline_subtraction, bootstrap=args.bootstrap,
+        critic_learning_rate=critic_learning_rate, critic_hidden_nodes=critic_hidden_nodes,
+        n=n, smoothing_window=9, eval_interval=400, env_name="LunarLander-v2")
     Plot.add_curve(eval_episodes, learning_curve, label=r'Entropy, $\eta$ = {}'.format(entropy))
     Plot2.add_curve(eval_episodes, learning_curve_smooth, label=r'Entropy, $\eta$ = {}'.format(entropy))
 
