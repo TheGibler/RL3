@@ -8,8 +8,8 @@ from Helper import LearningCurvePlot, smooth
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-b", "--baseline_subtraction", help="Runs actor-critic with baseline subtraction (running without baseline subtraction and bootstrap runs REINFORCE)", action="store_true")
-parser.add_argument("-t", "--bootstrap", help="Runs actor-critic with bootstrap (running without baseline subtraction and bootstrap runs REINFORCE)", action="store_true")
+parser.add_argument("-b", "--baseline_subtraction", default=False, help="Runs actor-critic with baseline subtraction (running without baseline subtraction and bootstrap runs REINFORCE)", action="store_true")
+parser.add_argument("-t", "--bootstrap", default=False, help="Runs actor-critic with bootstrap (running without baseline subtraction and bootstrap runs REINFORCE)", action="store_true")
 parser.add_argument("-l", "--learning_rate", type=float, default=0.001, help="Sets the policy learning rate for the training. Default: 0.001")
 parser.add_argument("-k", "--critic_learning_rate", type=float, default=0.05, help="Sets critic the learning rate for the critic for the training. Default: 0.01")
 parser.add_argument("-m", "--max_episodes", type=int, default=10000, help="Sets the episode length for training. Default: 10000")
