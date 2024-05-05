@@ -45,23 +45,29 @@ def train_model(policy, n_training_episodes, eval_steps, env, eval_env, val_func
 
         returns = deque(maxlen=max_n_timesteps)
         T = len(rewards)
-        val = 0
+        begin = 0
 
-        # calculate the returns from T-1 to 0
-        for t in range(T-1, -1, -1):
-            if bootstrap and t + n < T:
+        # bootstrap
+        if bootstrap:
+            # calculate the returns from T-1 to 0
+            for t in range(T - n):
                 future_state = torch.from_numpy(np.array(states[t + n])).float().unsqueeze(0)
                 val = val_func.critic(future_state) * pow(gamma, n)
                 val = sum(gamma ** i * rewards[t + i] for i in range(n)) + val
-            else:
-                # calculate the returns from T-1 to 0
-                val = gamma * val + rewards[t]
+                returns.append([val])
+            begin = T - n
 
-            # baseline subtraction
-            if baseline_subtraction:
-                returns.appendleft([val - val_func.critic(torch.from_numpy(np.array(states[t])).float().unsqueeze(0))])
-            else:
-                returns.appendleft([val])
+        val = 0
+        returns2 = deque(maxlen=n)
+        for t in range(T - 1, begin - 1, -1):
+            val = gamma * val + rewards[t]
+            returns2.appendleft([val])
+        returns += returns2
+
+        # baseline subtraction
+        if baseline_subtraction:
+            for i in range(T):
+                returns[i][0] -= val_func.critic(torch.from_numpy(np.array(states[i])).float().unsqueeze(0))
 
         returns_tensor = torch.tensor(returns)
         # returns is either discounted returns, Q_sa or A_sa
